@@ -185,13 +185,39 @@ def compute_quality_flags(summary: DatasetSummary, missing_df: pd.DataFrame) -> 
     flags["max_missing_share"] = max_missing_share
     flags["too_many_missing"] = max_missing_share > 0.5
 
-    # Простейший «скор» качества
+    # New heuristic: has_constant_columns
+    has_constant = False
+    for col in summary.columns:
+        if col.non_null == 0:
+            has_constant = True
+            break
+        elif col.missing == 0 and col.unique == 1:
+            has_constant = True
+            break
+    flags["has_constant_columns"] = has_constant
+
+    # New heuristic: has_high_cardinality_categoricals
+    threshold_abs = 50
+    threshold_rel = 0.2  # 20% of total rows
+    has_high_card = False
+    for col in summary.columns:
+        if not col.is_numeric and col.non_null > 0:
+            if col.unique > threshold_abs or col.unique > threshold_rel * summary.n_rows:
+                has_high_card = True
+                break
+    flags["has_high_cardinality_categoricals"] = has_high_card
+
+    # Recompute quality_score with new penalties
     score = 1.0
-    score -= max_missing_share  # чем больше пропусков, тем хуже
+    score -= max_missing_share
     if summary.n_rows < 100:
         score -= 0.2
     if summary.n_cols > 100:
         score -= 0.1
+    if has_constant:
+        score -= 0.05
+    if has_high_card:
+        score -= 0.05
 
     score = max(0.0, min(1.0, score))
     flags["quality_score"] = score
