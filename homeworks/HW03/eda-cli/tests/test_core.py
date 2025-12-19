@@ -1,6 +1,8 @@
+# tests/test_core.py
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
 from eda_cli.core import (
     compute_quality_flags,
@@ -59,3 +61,37 @@ def test_correlation_and_top_categories():
     city_table = top_cats["city"]
     assert "value" in city_table.columns
     assert len(city_table) <= 2
+
+
+def test_has_constant_columns_flag():
+    """Проверка флага has_constant_columns на примере датафрейма с константной колонкой"""
+    df = pd.DataFrame({
+        "id": [1, 2, 3, 4],
+        "constant_feature": ["A", "A", "A", "A"],
+        "normal_feature": [10, 20, 30, 40]
+    })
+    
+    summary = summarize_dataset(df)
+    missing_df = missing_table(df)
+    flags = compute_quality_flags(summary, missing_df)
+    
+    assert flags["has_constant_columns"] is True
+    assert flags["quality_score"] < 1.0  # качество должно быть снижено из-за константной колонки
+
+
+def test_has_high_cardinality_categoricals_flag():
+    """Проверка флага has_high_cardinality_categoricals на примере датафрейма с высококардинальной категориальной колонкой"""
+    # Создаем датафрейм с 100 строками и категориальной колонкой с 30 уникальными значениями (30% > порог 20%)
+    categories = [f"cat_{i//3}" for i in range(100)]  # 30 уникальных категорий
+    df = pd.DataFrame({
+        "id": range(100),
+        "high_card_feature": categories,
+        "normal_feature": range(100)
+    })
+    
+    summary = summarize_dataset(df)
+    missing_df = missing_table(df)
+    flags = compute_quality_flags(summary, missing_df)
+    
+    assert flags["has_high_cardinality_categoricals"] is True
+    assert flags["quality_score"] < 1.0  # качество должно быть снижено из-за высококардинальной колонки
