@@ -1,0 +1,29 @@
+{
+    "dataset_01": {
+        "best_algorithm": "kmeans",
+        "parameters": {
+            "k": 2,
+            "eps": null,
+            "min_samples": null
+        },
+        "selection_criterion": "silhouette_score"
+    },
+    "dataset_02": {
+        "best_algorithm": "kmeans",
+        "parameters": {
+            "k": 2,
+            "eps": null,
+            "min_samples": null
+        },
+        "selection_criterion": "silhouette_score"
+    },
+    "dataset_03": {
+        "best_algorithm": "kmeans",
+        "parameters": {
+            "k": 3,
+            "eps": null,
+            "min_samples": null
+        },
+        "selection_criterion": "silhouette_score"
+    }
+}
