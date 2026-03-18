@@ -1,5 +1,5 @@
 {
-  "dataset": "KMNIST",
+  "dataset": "EMNIST",
   "seed": 42,
   "model_config": {
     "hidden_sizes": [
@@ -16,5 +16,5 @@
     "lr": 0.001,
     "weight_decay": 0
   },
-  "epochs_trained": 18
+  "epochs_trained": 20
 }
