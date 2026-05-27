@@ -1,0 +1,11 @@
+seed: 42
+num_games: 32
+max_plies: 24
+positive_fraction: 0.2
+exploration_rate: 0.25
+validation_fraction: 0.25
+n_estimators: 60
+max_depth: 9
+model_output: artifacts/chess_move_ranker.joblib
+metrics_output: artifacts/metrics.json
+dataset_output: data/generated_self_play.jsonl

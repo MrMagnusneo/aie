@@ -1,0 +1,10 @@
+.git
+.pytest_cache
+__pycache__
+*.pyc
+.venv
+docs/superpowers
+notebooks/.ipynb_checkpoints
+artifacts/*.joblib
+artifacts/*.json
+data/generated_self_play.jsonl

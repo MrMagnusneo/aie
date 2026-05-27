@@ -1,0 +1,11 @@
+{
+  "accuracy": 0.8643778452200304,
+  "average_precision": 0.811188716066582,
+  "baseline_top1_good_rate": 0.837696335078534,
+  "examples": 20669.0,
+  "f1": 0.717948717948718,
+  "max_plies": 24.0,
+  "model_top1_good_rate": 0.8691099476439791,
+  "num_games": 32.0,
+  "roc_auc": 0.9227206701216062
+}
