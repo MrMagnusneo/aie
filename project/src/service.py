@@ -6,9 +6,10 @@ from pathlib import Path
 from typing import Any
 
 import chess
+import chess.svg
 import uvicorn
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import HTMLResponse, FileResponse, Response
 from pydantic import BaseModel, Field
 
 from .chess_ai.data import generate_labeled_examples
@@ -51,6 +52,62 @@ def read_static(file_path: str) -> FileResponse:
     if static_file.exists():
         return FileResponse(static_file)
     raise HTTPException(status_code=404, detail="File not found")
+
+
+@app.get("/board_svg")
+def board_svg(
+    fen: str = Query(default=chess.STARTING_FEN, description="Position in FEN notation."),
+    last_move: str | None = Query(default=None, description="Last move in UCI (e.g. e2e4) to highlight."),
+    best_move: str | None = Query(default=None, description="Best move in UCI to show as arrow."),
+    size: int = Query(default=400, ge=100, le=800, description="Board image size in pixels."),
+) -> Response:
+    """Render current board position as SVG using python-chess."""
+    try:
+        board = chess.Board(fen)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid FEN: {exc}") from exc
+
+    lastmove = None
+    if last_move:
+        try:
+            lastmove = chess.Move.from_uci(last_move)
+        except Exception:
+            pass
+
+    arrows = []
+    if best_move:
+        try:
+            mv = chess.Move.from_uci(best_move)
+            arrows = [chess.svg.Arrow(mv.from_square, mv.to_square, color="#000000cc")]
+        except Exception:
+            pass
+
+    check_square = None
+    if board.is_check():
+        check_square = board.king(board.turn)
+
+    custom_colors = {
+        "square light": "#ffffff",
+        "square dark": "#e0e0e0",
+        "square light lastmove": "#dcdcdc",
+        "square dark lastmove": "#b8b8b8",
+        "margin": "#ffffff",
+        "inner border": "#111111",
+        "outer border": "#111111",
+        "coord": "#333333",
+    }
+
+    svg_content = chess.svg.board(
+        board,
+        lastmove=lastmove,
+        check=check_square,
+        arrows=arrows,
+        size=size,
+        coordinates=True,
+        colors=custom_colors,
+    )
+    return Response(content=svg_content, media_type="image/svg+xml")
+
 
 
 @app.post("/make_move")
