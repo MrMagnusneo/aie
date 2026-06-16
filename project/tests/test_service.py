@@ -46,3 +46,23 @@ def test_predict_endpoint_rejects_invalid_fen():
         assert "invalid fen" in str(exc.detail).lower()
     else:
         raise AssertionError("invalid FEN should raise HTTPException")
+
+
+def test_make_move_endpoint_executes_legal_move():
+    fen = chess.STARTING_FEN
+    payload = service.make_move(service.MoveRequest(fen=fen, move_uci="e2e4"))
+    assert payload["status"] == "ok"
+    assert payload["is_game_over"] is False
+    assert payload["legal_move_count"] > 0
+    assert payload["fen"] != fen
+
+
+def test_make_move_endpoint_rejects_illegal_move():
+    fen = chess.STARTING_FEN
+    try:
+        service.make_move(service.MoveRequest(fen=fen, move_uci="e2e5"))
+    except HTTPException as exc:
+        assert exc.status_code == 400
+        assert "illegal" in str(exc.detail).lower()
+    else:
+        raise AssertionError("illegal move should raise HTTPException")

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Move Classifier | AI Web GUI</title>
+    <meta name="description" content="Интерактивный веб-интерфейс для классификатора шахматных ходов на базе искусственного интеллекта. Оценка и ранжирование легальных ходов.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon">♞</div>
+                <div class="logo-text">
+                    <h1>Chess Legal Move Classifier</h1>
+                    <p class="subtitle">Инженерия Искусственного Интеллекта &bull; Проект</p>
+                </div>
+            </div>
+            <div class="status-panel">
+                <div class="status-indicator" id="model-status">
+                    <span class="status-dot pulsing"></span>
+                    <span class="status-label">Загрузка модели...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- Left Column: Chess Board and Controls -->
+            <section class="board-column">
+                <div class="glass-card board-wrapper">
+                    <!-- Board Info/Status -->
+                    <div class="board-info-bar">
+                        <div class="turn-indicator" id="turn-indicator">
+                            <span class="turn-dot white-turn"></span>
+                            <span class="turn-text">Ход белых</span>
+                        </div>
+                        <div class="game-status" id="game-status">Игра активна</div>
+                    </div>
+                    
+                    <!-- The Chess Board -->
+                    <div class="chess-board-container">
+                        <div class="board-coordinates-left">
+                            <span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
+                        </div>
+                        <div class="board-grid-wrapper">
+                            <div class="chess-board" id="chess-board" data-flipped="false">
+                                <!-- Squares will be generated dynamically by JS -->
+                            </div>
+                            <div class="board-coordinates-bottom">
+                                <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls Card -->
+                <div class="glass-card controls-card">
+                    <h2 class="card-title">Панель управления</h2>
+                    
+                    <div class="control-row">
+                        <label for="fen-input" class="input-label">Позиция FEN:</label>
+                        <div class="input-group">
+                            <input type="text" id="fen-input" class="text-input" placeholder="Введите FEN...">
+                            <button id="btn-load-fen" class="btn btn-secondary" title="Загрузить FEN">Загрузить</button>
+                        </div>
+                    </div>
+
+                    <div class="btn-grid">
+                        <button id="btn-reset" class="btn btn-danger">
+                            <span class="btn-icon">↺</span> Сбросить
+                        </button>
+                        <button id="btn-undo" class="btn btn-secondary" disabled>
+                            <span class="btn-icon">↩</span> Назад
+                        </button>
+                        <button id="btn-ai-move" class="btn btn-primary">
+                            <span class="btn-icon">🤖</span> Ход AI
+                        </button>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="autoplay-controls">
+                        <div class="toggle-control">
+                            <span class="control-desc">Режим игры против AI:</span>
+                            <label class="switch">
+                                <input type="checkbox" id="play-ai-toggle">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="toggle-control">
+                            <span class="control-desc">Автоигра AI vs AI:</span>
+                            <label class="switch">
+                                <input type="checkbox" id="self-play-toggle">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+
+                        <div class="slider-control" id="speed-control-container" style="display: none;">
+                            <div class="slider-labels">
+                                <span class="slider-label">Скорость автоигры:</span>
+                                <span class="slider-val" id="speed-value">1.0 с</span>
+                            </div>
+                            <input type="range" id="autoplay-speed" min="0.5" max="3" step="0.1" value="1.0" class="range-slider">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Column: Predictions & Details -->
+            <section class="data-column">
+                <!-- Best Move Highlights -->
+                <div class="glass-card best-move-card">
+                    <div class="best-move-header">
+                        <span class="badge">Лучший ход (AI)</span>
+                        <span class="model-badge" id="model-badge">Random Forest</span>
+                    </div>
+                    <div class="best-move-display">
+                        <div class="move-arrow">🎯</div>
+                        <div class="move-details">
+                            <div class="move-san" id="best-move-san">-</div>
+                            <div class="move-uci" id="best-move-uci">нет ходов</div>
+                        </div>
+                        <div class="move-probability" id="best-move-prob">--%</div>
+                    </div>
+                </div>
+
+                <!-- Candidates List -->
+                <div class="glass-card candidates-card">
+                    <div class="candidates-header">
+                        <h2 class="card-title">Ранжирование легальных ходов</h2>
+                        <span class="count-badge" id="moves-count">0 ходов</span>
+                    </div>
+                    
+                    <div class="candidates-table-container">
+                        <table class="candidates-table">
+                            <thead>
+                                <tr>
+                                    <th>Ход (SAN)</th>
+                                    <th>UCI</th>
+                                    <th>Вероятность</th>
+                                    <th>Эвристика</th>
+                                    <th class="bar-col">Относительный ранг</th>
+                                </tr>
+                            </thead>
+                            <tbody id="candidates-body">
+                                <tr>
+                                    <td colspan="5" class="empty-state">Нет данных. Загрузите позицию или сделайте ход.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Metadata Card -->
+                <div class="glass-card meta-card">
+                    <h2 class="card-title">Параметры инференса</h2>
+                    <div class="meta-grid">
+                        <div class="meta-item">
+                            <span class="meta-label">Файл модели:</span>
+                            <span class="meta-value" id="meta-model-path">-</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Игры в обучении:</span>
+                            <span class="meta-value" id="meta-train-games">-</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Глубина партий:</span>
+                            <span class="meta-value" id="meta-train-plies">-</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Точность (AP):</span>
+                            <span class="meta-value text-accent" id="meta-train-ap">-</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>&copy; 2026 Рогованов Андрей Андреевич (ИКБО-64-24) &bull; Курс &laquo;Инженерия Искусственного Интеллекта&raquo;</p>
+        </footer>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -8,6 +8,7 @@ from typing import Any
 import chess
 import uvicorn
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel, Field
 
 from .chess_ai.data import generate_labeled_examples
@@ -28,7 +29,61 @@ app = FastAPI(
 
 class PredictRequest(BaseModel):
     fen: str = Field(default=chess.STARTING_FEN, description="Chess position in FEN notation.")
-    top_k: int = Field(default=5, ge=1, le=50, description="Number of ranked legal moves to return.")
+    top_k: int = Field(default=5, ge=1, le=250, description="Number of ranked legal moves to return.")
+
+
+class MoveRequest(BaseModel):
+    fen: str = Field(..., description="Current chess position in FEN notation.")
+    move_uci: str = Field(..., description="Move to make in UCI notation (e.g. e2e4).")
+
+
+@app.get("/", response_class=HTMLResponse)
+def read_root() -> HTMLResponse:
+    static_index = Path(__file__).parent / "static" / "index.html"
+    if static_index.exists():
+        return HTMLResponse(content=static_index.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h1>Chess Web GUI static files not found!</h1>", status_code=404)
+
+
+@app.get("/static/{file_path:path}")
+def read_static(file_path: str) -> FileResponse:
+    static_file = Path(__file__).parent / "static" / file_path
+    if static_file.exists():
+        return FileResponse(static_file)
+    raise HTTPException(status_code=404, detail="File not found")
+
+
+@app.post("/make_move")
+def make_move(request: MoveRequest) -> dict[str, Any]:
+    try:
+        board = chess.Board(request.fen)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid FEN: {exc}") from exc
+
+    # Parse and validate move
+    try:
+        # chess.Move.from_uci might fail or need validation
+        move = chess.Move.from_uci(request.move_uci)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid UCI move format: {exc}") from exc
+
+    if move not in board.legal_moves:
+        # Check if it's a promotion move (missing promotion character in request_uci)
+        # e.g., e7e8 instead of e7e8q. Automatically promote to Queen.
+        promo_move = chess.Move.from_uci(f"{request.move_uci}q")
+        if promo_move in board.legal_moves:
+            move = promo_move
+        else:
+            raise HTTPException(status_code=400, detail=f"Move {request.move_uci} is illegal in this position.")
+
+    board.push(move)
+    return {
+        "status": "ok",
+        "fen": board.fen(),
+        "is_game_over": board.is_game_over(),
+        "result": board.result() if board.is_game_over() else None,
+        "legal_move_count": board.legal_moves.count(),
+    }
 
 
 @app.get("/health")

@@ -2,7 +2,7 @@
 
 | # | Критерий | Да/Нет (студент) | Где смотреть / комментарий |
 |---|---|---|---|
-| 1 | Сервис запускается по инструкциям из `project/README.md` и работает | ✅ | `README.md`, `src/service.py`, `Dockerfile` |
+| 1 | Сервис запускается по инструкциям из `project/README.md` и работает | ✅ | `README.md`, `src/service.py`, `Dockerfile`, `src/static/` (включая Web GUI) |
 | 2 | Endpoint `/predict` использует реальную модель, а не заглушку | ✅ | `src/service.py`, `src/chess_ai/model.py`, `artifacts/chess_move_ranker.joblib` |
 | 3 | Есть EDA и хотя бы один эксперимент с метриками | ✅ | `notebooks/01_eda_and_experiments.ipynb`, `artifacts/metrics.json`, `report.md` |
 | 4 | Есть baseline и улучшенная модель, есть сравнение по метрикам | ✅ | `src/chess_ai/heuristics.py`, `src/chess_ai/model.py`, `report.md` |
@@ -12,6 +12,7 @@
 | 8 | Реализованы логи/наблюдаемость | ✅ | `src/service.py`, `/health`, `logging` |
 | 9 | В `report.md` обоснован выбор финальной модели по результатам экспериментов | ✅ | `report.md`, разделы 4-5 |
 | 10 | `README.md` и `report.md` позволяют понять сценарий демонстрации | ✅ | `README.md`, `report.md`, разделы демонстрации |
+| 11 | Реализован интерактивный веб-интерфейс для визуальной проверки модели | ✅ | `src/static/index.html`, `src/static/app.js` (Web GUI доступен на `/`) |
 
-Итого: **10 / 10** по самооценке.
+Итого: **11 / 11** по самооценке.
 
